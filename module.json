@@ -1,0 +1,27 @@
+{
+    "name": "RouteRequest",
+    "alias": "routerequest",
+    "version": "2.1.0",
+    "description": "Pilot Route Request Module v2.1.0 — Afterburner Edition for phpVMS v7 (GitHub Releases Update Checker & 1-Click Self-Updater, IndexedDB Local Airport & Airline Engine, Zero-Reload AJAX Multi-Flight Creation, FlightAware Route/Altitude Auto-Matcher, Non-Blocking Background Emails). Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue.",
+    "author": "Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue",
+    "keywords": [
+        "phpvms",
+        "disposable",
+        "route-request",
+        "typeratings",
+        "dispatch",
+        "schedules",
+        "flightaware",
+        "indexeddb",
+        "afterburner"
+    ],
+    "active": 1,
+    "order": 0,
+    "providers": [
+        "Modules\\RouteRequest\\Providers\\AppServiceProvider",
+        "Modules\\RouteRequest\\Providers\\RouteServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}
