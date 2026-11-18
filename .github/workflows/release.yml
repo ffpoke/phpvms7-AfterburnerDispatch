@@ -1,0 +1,28 @@
+name: Package phpVMS 7 Module Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-release-zip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          path: RouteRequest
+
+      - name: Create phpVMS7 Module ZIP
+        run: |
+          zip -r RouteRequest-phpvms7-module-${GITHUB_REF_NAME}-DRM-Client.zip RouteRequest -x "RouteRequest/.git/*" "RouteRequest/.github/*"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: RouteRequest ${GITHUB_REF_NAME} — Afterburner Edition (Cloud DRM Client)
+          files: RouteRequest-phpvms7-module-${GITHUB_REF_NAME}-DRM-Client.zip
+          generate_release_notes: true

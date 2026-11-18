@@ -1,0 +1,28 @@
+{
+    "name": "RouteRequest",
+    "alias": "routerequest",
+    "version": "2.3.0",
+    "description": "Pilot Route Request Module v2.3.0 — Afterburner Edition for phpVMS v7 (In-Admin License & Storefront Center, 1-Click Free Tier 1 Key Provisioning, Square & PayPal Checkout Integration, 3-Tier Cloud DRM, PaxStudio Loadsheet Bridge, Pre-Release Updater, IndexedDB Local Airport Engine, Zero-Reload AJAX Dispatch). Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue.",
+    "author": "Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue",
+    "keywords": [
+        "phpvms",
+        "disposable",
+        "route-request",
+        "typeratings",
+        "dispatch",
+        "schedules",
+        "flightaware",
+        "indexeddb",
+        "afterburner",
+        "paxstudio"
+    ],
+    "active": 1,
+    "order": 0,
+    "providers": [
+        "Modules\\RouteRequest\\Providers\\AppServiceProvider",
+        "Modules\\RouteRequest\\Providers\\RouteServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}
