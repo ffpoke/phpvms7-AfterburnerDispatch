@@ -1,0 +1,335 @@
+<?php
+
+namespace Modules\RouteRequest\Http\Controllers\Frontend;
+
+use App\Contracts\Controller;
+use App\Models\Airport;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\View\View;
+use Modules\RouteRequest\Http\Requests\CreateRouteRequest;
+use Modules\RouteRequest\Mail\RouteRequestSubmittedMail;
+use Modules\RouteRequest\Models\RouteRequest;
+use Modules\RouteRequest\Support\RealWorldAirlines;
+use Modules\RouteRequest\Support\DrmEntitlements;
+use Modules\RouteRequest\Support\SchemaHelper;
+use Nwidart\Modules\Facades\Module;
+
+class RouteRequestController extends Controller
+{
+    protected function ensureColumnsExist(): void
+    {
+        if (!class_exists(SchemaHelper::class, false)) {
+            require_once __DIR__ . '/../../../Support/SchemaHelper.php';
+        }
+        SchemaHelper::ensureRouteRequestsColumns();
+    }
+
+    public function index(Request $request): View
+    {
+        $this->ensureColumnsExist();
+
+        $user = Auth::user();
+        $user->loadMissing('typeratings');
+
+        $pilotTypeRatings = $user->typeratings
+            ? $user->typeratings->where('active', true)->sortBy('type')
+            : collect();
+
+        $realworldAirlines = RealWorldAirlines::all();
+
+        $hasDispoBasic    = Module::find('DisposableBasic') && Module::find('DisposableBasic')->isEnabled();
+        $hasDispoSpecial  = Module::find('DisposableSpecial') && Module::find('DisposableSpecial')->isEnabled();
+        $hasDispoAirports = Module::find('DisposableAirports') && Module::find('DisposableAirports')->isEnabled();
+
+        $defaultDep = strtoupper((string) old('dep_airport_id', $request->query('dep', $user->curr_airport_id ?? '')));
+        $defaultArr = strtoupper((string) old('arr_airport_id', $request->query('arr', '')));
+
+        $defaultTr = $request->query('typerating_id', '');
+        if ($defaultTr === '' && $pilotTypeRatings->count() === 1) {
+            $defaultTr = (string) $pilotTypeRatings->first()->id;
+        }
+
+        $defaultDepAirport = $defaultDep ? Airport::select('id', 'name', 'icao', 'iata', 'location')->find($defaultDep) : null;
+        $defaultArrAirport = $defaultArr ? Airport::select('id', 'name', 'icao', 'iata', 'location')->find($defaultArr) : null;
+
+        $myRequests = collect();
+        try {
+            $myRequests = RouteRequest::with(['dep_airport', 'arr_airport'])
+                ->where('user_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->limit(25)
+                ->get();
+
+            // v2.0.0 Afterburner: Batch-load all generated flights across all 25 rows in 1 single query
+            RouteRequest::hydrateGeneratedFlights($myRequests);
+        } catch (\Exception $e) {
+            // Table may not be migrated yet
+        }
+
+        if (!class_exists(DrmEntitlements::class, false)) {
+            require_once __DIR__ . '/../../../Support/DrmEntitlements.php';
+        }
+        $drmEntitlements = DrmEntitlements::current(false);
+        $defaultEmail = config('routerequest.recipient_email', 'admin@flyfantasyair.net') ?: 'admin@flyfantasyair.net';
+        $cacheHash = SchemaHelper::getAirportsCacheHash();
+
+        return view('routerequest::frontend.index', [
+            'user'              => $user,
+            'pilotTypeRatings'  => $pilotTypeRatings,
+            'realworldAirlines' => $realworldAirlines,
+            'myRequests'        => $myRequests,
+            'defaultEmail'      => $defaultEmail,
+            'defaultDep'        => $defaultDep,
+            'defaultArr'        => $defaultArr,
+            'defaultDepAirport' => $defaultDepAirport,
+            'defaultArrAirport' => $defaultArrAirport,
+            'defaultTr'         => $defaultTr,
+            'hasDispoBasic'     => $hasDispoBasic,
+            'hasDispoSpecial'   => $hasDispoSpecial,
+            'hasDispoAirports'  => $hasDispoAirports,
+            'cacheHash'         => $cacheHash,
+            'drmEntitlements'   => $drmEntitlements,
+        ]);
+    }
+
+    /**
+     * v2.0.0 Afterburner Edition:
+     * Returns the full phpVMS `airports` snapshot + `realworld_airlines` list + version/hash
+     * so the browser can store them in persistent `IndexedDB` (`RouteRequestAfterburnerDB`).
+     */
+    public function localCacheBundle(Request $request): JsonResponse
+    {
+        if (!class_exists(SchemaHelper::class, false)) {
+            require_once __DIR__ . '/../../../Support/SchemaHelper.php';
+        }
+
+        $airports = Airport::select('id', 'icao', 'iata', 'name', 'location', 'country', 'hub')
+            ->orderBy('id', 'asc')
+            ->get()
+            ->map(function ($a) {
+                $iata = !empty($a->iata) ? ' / ' . $a->iata : '';
+                $loc  = !empty($a->location) ? ' (' . $a->location . ')' : '';
+                $hub  = $a->hub ? ' [HUB]' : '';
+                $text = $a->id . $iata . ' — ' . $a->name . $loc . $hub;
+                return [
+                    'id'     => strtoupper((string) $a->id),
+                    'icao'   => strtoupper((string) ($a->icao ?? $a->id)),
+                    'iata'   => strtoupper((string) ($a->iata ?? '')),
+                    'name'   => (string) $a->name,
+                    'loc'    => (string) ($a->location ?? ''),
+                    'text'   => $text,
+                    'search' => strtoupper($a->id . ' ' . ($a->icao ?? '') . ' ' . ($a->iata ?? '') . ' ' . $a->name . ' ' . ($a->location ?? '')),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'version'   => '2.2.0',
+            'edition'   => 'Afterburner Edition',
+            'hash'      => SchemaHelper::getAirportsCacheHash(),
+            'count'     => $airports->count(),
+            'airports'  => $airports,
+            'airlines'  => RealWorldAirlines::all(),
+        ])->header('Cache-Control', 'private, max-age=3600');
+    }
+
+    public function searchAirports(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->get('q', $request->get('term', '')));
+
+        $query = Airport::select('id', 'icao', 'iata', 'name', 'location', 'country', 'hub');
+
+        if ($q !== '') {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('id', 'LIKE', '%' . $q . '%')
+                    ->orWhere('icao', 'LIKE', '%' . $q . '%')
+                    ->orWhere('iata', 'LIKE', '%' . $q . '%')
+                    ->orWhere('name', 'LIKE', '%' . $q . '%')
+                    ->orWhere('location', 'LIKE', '%' . $q . '%');
+            });
+        }
+
+        $results = $query->orderByRaw(
+            "CASE
+                WHEN id = ? THEN 0
+                WHEN iata = ? THEN 1
+                WHEN id LIKE ? THEN 2
+                WHEN iata LIKE ? THEN 3
+                ELSE 4
+            END, id ASC",
+            [strtoupper($q), strtoupper($q), strtoupper($q) . '%', strtoupper($q) . '%']
+        )
+        ->limit(75)
+        ->get()
+        ->map(function ($a) {
+            $iata = !empty($a->iata) ? ' / ' . $a->iata : '';
+            $loc  = !empty($a->location) ? ' (' . $a->location . ')' : '';
+            $hub  = $a->hub ? ' [HUB]' : '';
+            return [
+                'id'   => $a->id,
+                'text' => $a->id . $iata . ' — ' . $a->name . $loc . $hub,
+            ];
+        });
+
+        return response()->json([
+            'results' => $results,
+            'data'    => $results,
+        ]);
+    }
+
+    public function store(CreateRouteRequest $request): RedirectResponse
+    {
+        $this->ensureColumnsExist();
+
+        $user = Auth::user();
+        $user->loadMissing('typeratings');
+
+        $validated = $request->validated();
+
+        $selectedRating = $user->typeratings
+            ->where('active', true)
+            ->firstWhere('id', (int) $validated['typerating_id']);
+
+        if (!$selectedRating) {
+            flash()->error('You are not signed off on the selected Type Rating.');
+            return redirect()->route('routerequest.index');
+        }
+
+        $formattedTypeRating = trim($selectedRating->type . ' - ' . $selectedRating->name);
+
+        $airlineName = $validated['realworld_airline'] === 'OTHER'
+            ? trim($validated['realworld_airline_other'])
+            : trim($validated['realworld_airline']);
+
+        $multipleDest  = filter_var($request->input('multiple_destinations', false), FILTER_VALIDATE_BOOLEAN);
+        $requestReturn = filter_var($request->input('request_return', false), FILTER_VALIDATE_BOOLEAN);
+        $depAirport    = strtoupper(trim($validated['dep_airport_id']));
+        $arrAirport    = (!$multipleDest && !empty($validated['arr_airport_id']))
+            ? strtoupper(trim($validated['arr_airport_id']))
+            : null;
+
+        $duplicateQuery = RouteRequest::whereIn('status', ['pending', 'approved', 'in_progress'])
+            ->where('dep_airport_id', $depAirport)
+            ->where('realworld_airline', $airlineName)
+            ->where(function ($q) use ($selectedRating, $formattedTypeRating) {
+                $q->where('typerating_id', $selectedRating->id)
+                  ->orWhere('aircraft_type', $formattedTypeRating);
+            });
+
+        if ($arrAirport === null) {
+            $duplicateQuery->whereNull('arr_airport_id');
+        } else {
+            $duplicateQuery->where('arr_airport_id', $arrAirport);
+        }
+
+        $existingDuplicate = $duplicateQuery->first();
+        if ($existingDuplicate) {
+            flash()->warning(
+                'Duplicate Request Prevented: Request #' . $existingDuplicate->id .
+                ' for ' . $depAirport . ' -> ' . ($arrAirport ?: 'ANY') .
+                ' (' . $airlineName . ' / ' . $formattedTypeRating . ') is already ' .
+                $existingDuplicate->status_label . '!'
+            );
+            return redirect()->route('routerequest.index')->withInput();
+        }
+
+        $defaultEmail = config('routerequest.recipient_email', 'admin@flyfantasyair.net') ?: 'admin@flyfantasyair.net';
+        $targetEmail = !empty($validated['recipient_email'])
+            ? trim($validated['recipient_email'])
+            : $defaultEmail;
+
+        $createData = [
+            'user_id'               => $user->id,
+            'typerating_id'         => $selectedRating->id,
+            'aircraft_type'         => $formattedTypeRating,
+            'realworld_airline'     => $airlineName,
+            'dep_airport_id'        => $depAirport,
+            'arr_airport_id'        => $arrAirport,
+            'multiple_destinations' => $multipleDest,
+            'request_return'        => $requestReturn,
+            'recipient_email'       => $targetEmail,
+            'notes'                 => $validated['notes'] ?? null,
+            'status'                => 'pending',
+        ];
+
+        try {
+            $routeRequest = RouteRequest::create($createData);
+        } catch (\Throwable $insertErr) {
+            // Self-heal schema if cache was stale and retry
+            SchemaHelper::ensureRouteRequestsColumns(true);
+            $routeRequest = RouteRequest::create($createData);
+        }
+
+        $routeRequest->multiple_destinations = $multipleDest;
+        $routeRequest->request_return        = $requestReturn;
+        $routeRequest->load(['user', 'dep_airport', 'arr_airport']);
+
+        $destText = $arrAirport ?: ($multipleDest ? 'MULTIPLE DESTINATIONS (ANY)' : 'OPEN');
+        $tripType = $requestReturn ? 'Round-Trip' : 'One-Way';
+        flash()->success('Route request (' . $depAirport . ' -> ' . $destText . ' [' . $tripType . '] | ' . $formattedTypeRating . ') submitted and dispatched to ' . $targetEmail . '!');
+
+        // v2.0.0 Afterburner: Send email after HTTP response so redirect is instant!
+        $userEmail = $user->email;
+        app()->terminating(function () use ($routeRequest, $targetEmail, $defaultEmail, $userEmail) {
+            try {
+                $mail = Mail::to($targetEmail);
+                if ($defaultEmail && strtolower($defaultEmail) !== strtolower($targetEmail)) {
+                    $mail->cc($defaultEmail);
+                }
+                if (config('routerequest.cc_pilot', true) && !empty($userEmail) && strtolower($userEmail) !== strtolower($targetEmail)) {
+                    $mail->bcc($userEmail);
+                }
+                $mail->send(new RouteRequestSubmittedMail($routeRequest, false));
+            } catch (\Throwable $e) {
+                Log::error('RouteRequest Background Email Error: ' . $e->getMessage());
+            }
+        });
+
+        return redirect()->route('routerequest.index');
+    }
+
+    public function cancel(int $id): RedirectResponse
+    {
+        $user = Auth::user();
+        $routeRequest = RouteRequest::with(['user', 'dep_airport', 'arr_airport'])
+            ->where('id', $id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        if ($routeRequest->status !== 'pending') {
+            flash()->warning('Request #' . $routeRequest->id . ' can no longer be cancelled because it is already ' . $routeRequest->status_label . '.');
+            return redirect()->route('routerequest.index');
+        }
+
+        $routeRequest->status = 'cancelled';
+        $routeRequest->save();
+
+        $defaultEmail = config('routerequest.recipient_email', 'admin@flyfantasyair.net') ?: 'admin@flyfantasyair.net';
+        $recipients = array_unique(array_filter([
+            $routeRequest->recipient_email,
+            $defaultEmail,
+            $user->email,
+        ]));
+
+        flash()->info('Route request #' . $routeRequest->id . ' has been marked as Cancelled by Pilot and dispatch has been notified.');
+
+        app()->terminating(function () use ($routeRequest, $recipients) {
+            try {
+                if (!empty($recipients)) {
+                    Mail::to($recipients)->send(new RouteRequestSubmittedMail($routeRequest, true));
+                }
+            } catch (\Throwable $e) {
+                Log::error('RouteRequest Background Cancel Email Error: ' . $e->getMessage());
+            }
+        });
+
+        return redirect()->route('routerequest.index');
+    }
+}
