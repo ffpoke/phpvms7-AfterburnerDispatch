@@ -15,6 +15,7 @@ git add .
 git commit -m "Release v2.2.0 Afterburner Edition: 3-Tier DRM (Basic, Executive, Flagship + PaxStudio Bridge), 12/15 Per-Request & 28/Week Caps, Pre-Release Updater"
 git tag -f v2.2.0
 git push -u origin main --tags
+git push -f -u origin main --tags
 
 echo.
 echo Done! RouteRequest v2.2.0 and tag v2.2.0 are now live on ffpoke/phpvms7-RouteRequest!
