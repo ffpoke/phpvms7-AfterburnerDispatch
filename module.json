@@ -1,0 +1,30 @@
+{
+    "name": "RouteRequest",
+    "alias": "routerequest",
+    "version": "2.4.0",
+    "php": ">=8.3.0",
+    "description": "Pilot Route Request Module v2.4.0 — Afterburner Edition for phpVMS v7 (Requires PHP 8.3+ — Optimized with strict_types, typed constants, #[Override], and json_validate() for maximum speed and security). Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue.",
+    "author": "Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue",
+    "keywords": [
+        "phpvms",
+        "php83",
+        "disposable",
+        "route-request",
+        "typeratings",
+        "dispatch",
+        "schedules",
+        "flightaware",
+        "indexeddb",
+        "afterburner",
+        "paxstudio"
+    ],
+    "active": 1,
+    "order": 0,
+    "providers": [
+        "Modules\\RouteRequest\\Providers\\AppServiceProvider",
+        "Modules\\RouteRequest\\Providers\\RouteServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}

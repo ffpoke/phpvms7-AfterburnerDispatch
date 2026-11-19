@@ -1,0 +1,267 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\RouteRequest\Support;
+
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use ZipArchive;
+
+if (!class_exists(UpdateManager::class, false)) {
+    class UpdateManager
+    {
+        public const string CACHE_KEY = 'routerequest_github_update_v2_4';
+
+        public static function getRepo(): string
+        {
+            return trim((string) config('routerequest.github_repo', 'ffpoke/phpvms7-RouteRequest')) ?: 'ffpoke/phpvms7-RouteRequest';
+        }
+
+        public static function getCurrentVersion(): string
+        {
+            return ltrim(trim((string) config('routerequest.version', '2.4.0')), 'vV');
+        }
+
+        public static function allowsPreReleases(): bool
+        {
+            if (!class_exists(DrmEntitlements::class, false)) {
+                require_once __DIR__ . '/DrmEntitlements.php';
+            }
+            $ent = DrmEntitlements::current(false);
+            return !empty($ent['features']['prerelease_updates']) || ($ent['tier'] ?? '') === 'flagship';
+        }
+
+        public static function check(bool $force = false): array
+        {
+            $allowPre = self::allowsPreReleases();
+            $cacheKey = self::CACHE_KEY . ($allowPre ? '_prerelease' : '_stable');
+
+            if ($force) {
+                try {
+                    Cache::forget($cacheKey);
+                } catch (\Throwable $e) {}
+            }
+
+            $currentVersion = self::getCurrentVersion();
+            $repo = self::getRepo();
+
+            $defaultData = [
+                'checked'          => false,
+                'repo'             => $repo,
+                'channel'          => $allowPre ? 'Flagship (Stable + Pre-Releases)' : 'Stable Releases Only',
+                'current_version'  => $currentVersion,
+                'latest_version'   => $currentVersion,
+                'is_prerelease'    => false,
+                'update_available' => false,
+                'release_name'     => null,
+                'changelog'        => null,
+                'published_at'     => null,
+                'download_url'     => null,
+                'html_url'         => 'https://github.com/' . $repo . '/releases',
+                'error'            => null,
+            ];
+
+            $fetchFn = function () use ($repo, $currentVersion, $allowPre, $defaultData) {
+                try {
+                    $url = $allowPre
+                        ? ('https://api.github.com/repos/' . $repo . '/releases?per_page=10')
+                        : ('https://api.github.com/repos/' . $repo . '/releases/latest');
+
+                    $response = Http::withHeaders([
+                        'User-Agent' => 'phpVMS7-RouteRequest-Updater/2.4.0 (ffpoke/phpvms7-RouteRequest)',
+                        'Accept'     => 'application/vnd.github+json',
+                    ])->timeout(8)->get($url);
+
+                    if ($response->status() === 404) {
+                        $defaultData['checked'] = true;
+                        return $defaultData;
+                    }
+
+                    if (!$response->successful()) {
+                        $defaultData['error'] = 'GitHub API returned HTTP ' . $response->status();
+                        return $defaultData;
+                    }
+
+                    $rawBody = $response->body();
+                    if ($rawBody === '' || !json_validate($rawBody)) {
+                        $defaultData['checked'] = true;
+                        return $defaultData;
+                    }
+                    $json = json_decode($rawBody, true);
+                    $releaseObj = null;
+
+                    if ($allowPre && is_array($json)) {
+                        foreach ($json as $rel) {
+                            if (is_array($rel) && empty($rel['draft']) && !empty($rel['tag_name'])) {
+                                $releaseObj = $rel;
+                                break;
+                            }
+                        }
+                    } elseif (is_array($json) && !empty($json['tag_name'])) {
+                        $releaseObj = $json;
+                    }
+
+                    if (!$releaseObj || empty($releaseObj['tag_name'])) {
+                        $defaultData['checked'] = true;
+                        return $defaultData;
+                    }
+
+                    $latestTag = ltrim(trim((string) $releaseObj['tag_name']), 'vV');
+                    $hasUpdate = version_compare($latestTag, $currentVersion, '>');
+
+                    $downloadUrl = $releaseObj['zipball_url'] ?? null;
+                    if (!empty($releaseObj['assets']) && is_array($releaseObj['assets'])) {
+                        foreach ($releaseObj['assets'] as $asset) {
+                            $aName = strtolower((string) ($asset['name'] ?? ''));
+                            if (str_ends_with($aName, '.zip') && !empty($asset['browser_download_url'])) {
+                                $downloadUrl = $asset['browser_download_url'];
+                                if (str_contains($aName, 'phpvms7-module') || str_contains($aName, 'routerequest')) {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    return [
+                        'checked'          => true,
+                        'repo'             => $repo,
+                        'channel'          => $allowPre ? 'Flagship (Stable + Pre-Releases)' : 'Stable Releases Only',
+                        'current_version'  => $currentVersion,
+                        'latest_version'   => $latestTag,
+                        'is_prerelease'    => !empty($releaseObj['prerelease']),
+                        'update_available' => $hasUpdate,
+                        'release_name'     => (string) ($releaseObj['name'] ?? ('v' . $latestTag)),
+                        'changelog'        => (string) ($releaseObj['body'] ?? ''),
+                        'published_at'     => !empty($releaseObj['published_at']) ? date('d.M.Y H:i', strtotime($releaseObj['published_at'])) : null,
+                        'download_url'     => $downloadUrl,
+                        'html_url'         => (string) ($releaseObj['html_url'] ?? ('https://github.com/' . $repo . '/releases')),
+                        'error'            => null,
+                    ];
+                } catch (\Throwable $e) {
+                    $defaultData['error'] = $e->getMessage();
+                    return $defaultData;
+                }
+            };
+
+            try {
+                return Cache::remember($cacheKey, 21600, $fetchFn);
+            } catch (\Throwable $e) {
+                return $fetchFn();
+            }
+        }
+
+        public static function installLatestUpdate(): array
+        {
+            $info = self::check(true);
+
+            if (empty($info['download_url'])) {
+                return [
+                    'success' => false,
+                    'message' => 'No downloadable release ZIP found on GitHub (' . self::getRepo() . ').',
+                ];
+            }
+
+            if (!class_exists(ZipArchive::class)) {
+                return [
+                    'success' => false,
+                    'message' => 'PHP ZipArchive extension is not enabled on this server. Please use the Direct Download ZIP button instead.',
+                ];
+            }
+
+            $modulePath = base_path('modules/RouteRequest');
+            if (!is_dir($modulePath) || !is_writable($modulePath)) {
+                return [
+                    'success' => false,
+                    'message' => 'The /modules/RouteRequest directory is not writable by PHP on this web host. Please use the Direct Download ZIP button to update manually.',
+                ];
+            }
+
+            $tmpZip = storage_path('app/routerequest_update_' . time() . '.zip');
+            $tmpExtractDir = storage_path('app/routerequest_extract_' . time());
+
+            try {
+                $response = Http::withHeaders([
+                    'User-Agent' => 'phpVMS7-RouteRequest-Updater/2.4.0 (ffpoke/phpvms7-RouteRequest)',
+                    'Accept'     => 'application/octet-stream, application/zip, */*',
+                ])->timeout(45)->get($info['download_url']);
+
+                if (!$response->successful()) {
+                    return [
+                        'success' => false,
+                        'message' => 'Failed to download update archive from GitHub (HTTP ' . $response->status() . ').',
+                    ];
+                }
+
+                File::put($tmpZip, $response->body());
+
+                $zip = new ZipArchive();
+                if ($zip->open($tmpZip) !== true) {
+                    @unlink($tmpZip);
+                    return [
+                        'success' => false,
+                        'message' => 'Downloaded file is not a valid ZIP archive.',
+                    ];
+                }
+
+                File::makeDirectory($tmpExtractDir, 0755, true, true);
+                $zip->extractTo($tmpExtractDir);
+                $zip->close();
+                @unlink($tmpZip);
+
+                $sourceDir = $tmpExtractDir;
+                if (is_dir($tmpExtractDir . '/RouteRequest') && file_exists($tmpExtractDir . '/RouteRequest/module.json')) {
+                    $sourceDir = $tmpExtractDir . '/RouteRequest';
+                } else {
+                    $subdirs = File::directories($tmpExtractDir);
+                    if (count($subdirs) === 1 && file_exists($subdirs[0] . '/module.json')) {
+                        $sourceDir = $subdirs[0];
+                    }
+                }
+
+                if (!file_exists($sourceDir . '/module.json')) {
+                    File::deleteDirectory($tmpExtractDir);
+                    return [
+                        'success' => false,
+                        'message' => 'Update archive structure invalid (missing module.json).',
+                    ];
+                }
+
+                File::copyDirectory($sourceDir, $modulePath);
+                File::deleteDirectory($tmpExtractDir);
+
+                if (class_exists(SchemaHelper::class)) {
+                    SchemaHelper::ensureRouteRequestsColumns(true);
+                }
+
+                try {
+                    Artisan::call('migrate', ['--force' => true]);
+                } catch (\Throwable $e) {}
+
+                try {
+                    Cache::forget(self::CACHE_KEY . '_stable');
+                    Cache::forget(self::CACHE_KEY . '_prerelease');
+                    Artisan::call('optimize:clear');
+                } catch (\Throwable $e) {}
+
+                return [
+                    'success' => true,
+                    'message' => 'Successfully updated RouteRequest to v' . ($info['latest_version'] ?? 'latest') . '! Caches and database schema have been refreshed.',
+                ];
+            } catch (\Throwable $e) {
+                @unlink($tmpZip);
+                if (is_dir($tmpExtractDir)) {
+                    File::deleteDirectory($tmpExtractDir);
+                }
+                Log::error('RouteRequest 1-Click Update Error: ' . $e->getMessage());
+                return [
+                    'success' => false,
+                    'message' => '1-Click Update encountered an error: ' . $e->getMessage(),
+                ];
+            }
+        }
+    }
+}
