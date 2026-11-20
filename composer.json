@@ -1,0 +1,30 @@
+{
+    "name": "ffpoke/phpvms7-routerequest",
+    "type": "phpvms-module",
+    "version": "2.9.0",
+    "description": "Pilot Route Request Module v2.9.0 — Afterburner Edition for phpVMS v7 (Requires PHP 8.3+ — Bulk Subfleet Route Sync Engine with Dry-Run Preview & Custom Airline Restrictions). Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue.",
+    "require": {
+        "php": "^8.3",
+        "ext-sodium": "*"
+    },
+    "authors": [
+        {
+            "name": "Alexander Leard",
+            "role": "Creator — Fantasy Air VA & Regal Artistic Avenue"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\RouteRequest\\Providers\\AppServiceProvider",
+                "Modules\\RouteRequest\\Providers\\RouteServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\RouteRequest\\": ""
+        }
+    }
+}

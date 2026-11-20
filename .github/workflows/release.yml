@@ -1,0 +1,58 @@
+name: Package phpVMS 7 Module Release (PHP 8.3+)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-release-zip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          path: RouteRequest
+
+      - name: Create phpVMS7 Module ZIP
+        run: |
+          zip -r RouteRequest-phpvms7-module-${GITHUB_REF_NAME}-DRM-Client.zip RouteRequest -x "RouteRequest/.git/*" "RouteRequest/.github/*" "RouteRequest/push-to-github.*" "RouteRequest/.gitignore"
+
+      - name: Generate Formatted Release Body
+        run: |
+          cat << 'EOF' > release_body.md
+          ## RouteRequest ${{ github.ref_name }} — Afterburner Edition (Cloud DRM Client)
+          **Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue**
+
+          > [!WARNING]
+          > **PHP 8.3+ STRICT REQUIREMENT (PHP 8.1 & PHP 8.2 SUPPORT DROPPED)**
+          > This release strictly requires **PHP 8.3 or newer (`>= 8.3.0`)** for maximum speed and security. PHP 8.1 and PHP 8.2 are no longer supported.
+
+          ### What's Included in ${{ github.ref_name }}
+          * **PHP 8.3+ Engine Optimization & Security Hardening:** Enforces `declare(strict_types=1);` across all PHP classes, native typed class constants, `#[\Override]` compile-time signature verification, and zero-allocation `json_validate()` payload validation.
+          * **3-Tier Cloud DRM & In-Admin Storefront Center (`/admin/routerequest`):** Supports database-backed license activation, 1-click Free Tier 1 key provisioning, and automated Square / Business PayPal upgrades without editing `.env`.
+          * **Tiered Feature & Quota Enforcement:**
+            * **Tier 1: Basic Dispatch Edition (Free):** 12 routes/request, 3 round-trip pairs/request, 28 routes/week cap, plus bugfixes and Afterburner trickle-down features.
+            * **Tier 2: Executive Dispatch Edition ($2.99/mo or $39.99 Unlimited):** 15 routes/request, 4 round-trip pairs/request, unlimited weekly routes, FlightAware Auto-Matcher, ⚡ 1-Click Auto-Create, and Tier 3 trickle-down updates.
+            * **Tier 3: Flagship Edition ($4.99/mo or $59.99 Unlimited):** All Executive features + ✦ PaxStudio Loadsheet & OFP Bridge, Pre-Release Update Channel, and hand-selected next-version features.
+          * **Afterburner Performance Engine:** Local `IndexedDB` airport autocomplete (`< 1 ms`), Zero-Reload AJAX Multi-Destination flight generation, and non-blocking background emails.
+
+          ---
+
+          ### Installation & Upgrade Instructions (Requires PHP 8.3+ — No `.env` Editing Required)
+          1. **Verify PHP Version:** Confirm your phpVMS v7 server is running **PHP 8.3+**.
+          2. **1-Click Upgrade (Existing Installations):** Open **`/admin/routerequest`** in your phpVMS Admin panel, click **`↻ Check for Updates`**, and click **`⚡ 1-Click Install Update (${{ github.ref_name }})`**.
+          3. **Fresh Installation / Manual Upgrade:** Download **`RouteRequest-phpvms7-module-${{ github.ref_name }}-DRM-Client.zip`** from the **Assets** section below and extract the `RouteRequest` folder into `/modules/RouteRequest`.
+          4. **Clear Cache:** In **Admin -> Maintenance**, click **Clear Application Cache** (`php artisan optimize:clear`).
+          5. **Activate License In-Panel:** Open **`/admin/routerequest`**, click **`🔑 License & Storefront Center`**, and click **`✓ 1-Click Claim Free Tier 1 Key`** (or paste a manual key / upgrade via Square or PayPal).
+          EOF
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: RouteRequest ${{ github.ref_name }} — Afterburner Edition (PHP 8.3+ Cloud DRM Client)
+          body_path: release_body.md
+          files: RouteRequest-phpvms7-module-${{ github.ref_name }}-DRM-Client.zip
+          generate_release_notes: true
