@@ -1,0 +1,29 @@
+{
+    "name": "ffpoke/phpvms7-routerequest",
+    "type": "phpvms-module",
+    "version": "2.6.0",
+    "description": "Pilot Route Request Module v2.6.0 — Afterburner Edition for phpVMS v7 (Requires PHP 8.3+ — Mark Completed Button, Duplicate Route Checker + Bypass, PaxStudio Auto-Updater). Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue.",
+    "require": {
+        "php": "^8.3"
+    },
+    "authors": [
+        {
+            "name": "Alexander Leard",
+            "role": "Creator — Fantasy Air VA & Regal Artistic Avenue"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\RouteRequest\\Providers\\AppServiceProvider",
+                "Modules\\RouteRequest\\Providers\\RouteServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\RouteRequest\\": ""
+        }
+    }
+}
