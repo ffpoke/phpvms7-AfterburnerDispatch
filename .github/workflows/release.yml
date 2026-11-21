@@ -1,0 +1,71 @@
+name: Package phpVMS 7 Module Release (PHP 8.3.36+)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-release-zip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          path: RouteRequest
+
+      - name: Read Module Metadata & Channel
+        id: meta
+        run: |
+          PHP_REQ=$(python3 -c "import json; print(json.load(open('RouteRequest/module.json')).get('php', '>=8.3.36'))")
+          echo "php_req=${PHP_REQ}" >> "$GITHUB_OUTPUT"
+          if [[ "${GITHUB_REF_NAME}" == *"-alpha"* || "${GITHUB_REF_NAME}" == *"-beta"* || "${GITHUB_REF_NAME}" == *"-rc"* ]]; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create phpVMS7 Module ZIP
+        run: |
+          zip -r RouteRequest-phpvms7-module-${GITHUB_REF_NAME}-DRM-Client.zip RouteRequest -x "RouteRequest/.git/*" "RouteRequest/.github/*" "RouteRequest/push-to-github.*" "RouteRequest/.gitignore"
+
+      - name: Generate Formatted Release Body
+        run: |
+          cat << 'EOF' > release_body.md
+          ## RouteRequest ${{ github.ref_name }} — Afterburner Edition (Cloud DRM Client)
+          **Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue**
+
+          > [!WARNING]
+          > **PHP 8.3.36+ STRICTLY ENFORCED (PHP 8.3.37+ RECOMMENDED)**
+          > This release strictly enforces **PHP 8.3.36 or newer (`${{ steps.meta.outputs.php_req }}`)** with the built-in `sodium` extension. Upgrading to **PHP 8.3.37+** is strongly recommended for the latest PHP 8.3 security patches. PHP 8.1, PHP 8.2, and older PHP 8.3 builds are not supported.
+
+          ### What's Included in ${{ github.ref_name }}
+          * **Security Hardening & Patched PHP 8.3 Enforcement:** Zip-Slip path traversal/symlink protection in `UpdateManager.php`, Leaflet 1.9.4 SHA-256 Subresource Integrity (SRI) hashes, Ed25519 cryptographically signed entitlements (`libsodium`), and runtime PHP `>= 8.3.36` enforcement.
+          * **Immutable Baked-In Feature Drop Schedule (`Support/DropSchedule.php`):** Features auto-unlock automatically at 00:00 UTC on scheduled 15th-of-month drop dates using the Master Server's Ed25519-signed clock, with a read-only timetable in **🔑 License & Storefront**.
+          * **Interactive Great-Circle Map, Block-Time Estimator & Range Guardrail:** Live Leaflet.js great-circle route arc, NM distance, cruise+taxi block-time estimation, and on-demand FlightAware & Flightradar24 verification when a route exceeds aircraft range.
+          * **Easy Bulk Subfleet Sync, Route Tools & Organized Tabbed UI:** Persistent tabs across Admin and Pilot Frontend, searchable subfleet checkbox pills, Saved Presets & ↩ Undo Last Batch, and the ⏱ Old Route Time Estimator Fixer.
+          * **3-Tier Cloud DRM & In-Admin Storefront Center (`/admin/routerequest`):**
+            * **Tier 1: Basic Dispatch Edition (Free):** 12 routes/request, 3 round-trip pairs/request, 28 routes/week cap, 7-Day Free Executive Trial (1 per domain), plus Afterburner trickle-down features.
+            * **Tier 2: Executive Dispatch Edition ($2.99/mo or $39.99 Unlimited):** 15 routes/request, 4 round-trip pairs/request, unlimited weekly routes, FlightAware Auto-Matcher, ⚡ 1-Click Auto-Create, Server-Gated Discord Webhooks, and Tier 3 trickle-down updates.
+            * **Tier 3: Flagship Edition ($4.99/mo or $59.99 Unlimited):** All Executive features + ✦ PaxStudio (`v2.22.0+`) Loadsheet Bridge & 1-Click Auto-Updater, ⏱ Old Route Time Fixer, ⭐ Subfleet Sync Presets & Undo, and Pre-Release Update Channel.
+
+          ---
+
+          ### Installation & Upgrade Instructions (Requires PHP 8.3.36+ — No `.env` Editing Required)
+          1. **Verify PHP Version:** Confirm your phpVMS v7 server is running **PHP 8.3.36+** (**PHP 8.3.37+** recommended) with `sodium` and `zip` enabled.
+          2. **1-Click Upgrade (Existing Installations):** Open **`/admin/routerequest`** in your phpVMS Admin panel, click **`↻ Check for Updates`**, and click **`⚡ 1-Click Install Update (${{ github.ref_name }})`**.
+          3. **Fresh Installation / Manual Upgrade:** Download **`RouteRequest-phpvms7-module-${{ github.ref_name }}-DRM-Client.zip`** from the **Assets** section below and extract the `RouteRequest` folder into `/modules/RouteRequest`.
+          4. **Clear Cache:** In **Admin -> Maintenance**, click **Clear Application Cache** (`php artisan optimize:clear`).
+          5. **Activate, Trial, or Upgrade In-Panel:** Open **`/admin/routerequest`** → **`🔑 License & Storefront`** tab to claim a Free Tier 1 key, start a **⚡ 7-Day Free Executive Trial**, paste a manual key, or upgrade via Square / PayPal.
+          EOF
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: RouteRequest ${{ github.ref_name }} — Afterburner Edition (PHP 8.3.36+ Cloud DRM Client)
+          body_path: release_body.md
+          files: RouteRequest-phpvms7-module-${{ github.ref_name }}-DRM-Client.zip
+          prerelease: ${{ steps.meta.outputs.is_prerelease }}
+          generate_release_notes: true
