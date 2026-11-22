@@ -1,0 +1,36 @@
+{
+    "name": "RouteRequest",
+    "alias": "routerequest",
+    "version": "3.0.7",
+    "php": ">=8.3.36",
+    "description": "Pilot Route Request Module v3.0.7 — Afterburner Edition for phpVMS v7 (Requires PHP 8.3+ — Interactive Great-Circle Map & Auto-Block-Time Estimator, Aircraft Range Guardrail with On-Demand FR24/FlightAware Check, Easy Bulk Subfleet Sync with Presets & Undo Last Batch, Old Route Time Estimator Fixer, 7-Day Free Executive Trial, Self-Service Portal & Fleet Telemetry). Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue.",
+    "author": "Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue",
+    "keywords": [
+        "phpvms",
+        "php83",
+        "ed25519",
+        "leaflet",
+        "great-circle",
+        "range-guardrail",
+        "subfleet-sync",
+        "route-time-fixer",
+        "disposable",
+        "route-request",
+        "typeratings",
+        "dispatch",
+        "flightaware",
+        "discord",
+        "indexeddb",
+        "afterburner",
+        "paxstudio"
+    ],
+    "active": 1,
+    "order": 0,
+    "providers": [
+        "Modules\\RouteRequest\\Providers\\AppServiceProvider",
+        "Modules\\RouteRequest\\Providers\\RouteServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}
