@@ -1,0 +1,47 @@
+PROPRIETARY SOURCE-AVAILABLE END USER LICENSE AGREEMENT (EULA)
+RouteRequest for phpVMS v7
+
+Copyright (c) 2026 Alexander Leard — Fantasy Air VA & Regal Artistic Avenue.
+All Rights Reserved.
+
+1. GRANT OF LICENSE
+Subject to your compliance with this Agreement and the accompanying SaaS Terms
+of Service (TERMS.md), Alexander Leard ("Licensor") grants you a limited,
+non-exclusive, non-transferable, revocable license to download, inspect, and
+run the RouteRequest phpVMS v7 module ("Software") solely on your own virtual
+airline ("VA") phpVMS v7 installation(s) corresponding to your active license
+tier (Tier 1 Basic, Tier 2 Executive, or Tier 3 Flagship).
+
+2. RESTRICTIONS
+Because this Software is Source-Available and NOT open-source (MIT/GPL), you
+may NOT, without prior written permission from the Licensor:
+  a) Remove, bypass, disable, alter, or tamper with license verification,
+     Ed25519 signature checks, DropSchedule.php feature timetables, rate
+     limits, or Cloud DRM entitlements;
+  b) Redistribute, sublicense, sell, rent, lease, publish, or share the
+     Software, modified forks, or license keys with third parties or across
+     unauthorized/unbound domains;
+  c) Reverse-engineer, spoof, or abuse the RouteRequestServer Cloud DRM API,
+     Discord dispatch proxy, or companion package endpoints.
+
+3. INSTALLATION & ACTIVATION TELEMETRY DISCLOSURE
+To enforce domain licensing, provide 1-click update compatibility checks, and
+track active installations, the Cloud DRM Client edition automatically transmits
+minimal, non-personal installation telemetry to RouteRequestServer upon module
+installation, activation, version change, and periodic heartbeats (at most once
+every 24 hours). Transmitted data is strictly limited to:
+  - Installation web address / domain (app.url) and VA site name;
+  - Installed RouteRequest version, build edition, and PHP version;
+  - License activation state (activated vs. unactivated) and key prefix.
+No pilot personal data (names, emails, IP addresses, or PIREPs) is collected.
+Telemetry operates in fail-open mode so temporary network outages do not disrupt
+your virtual airline, though an active internet connection is required for
+license activation, Cloud DRM features, and update delivery.
+
+4. TERMINATION & DISCLAIMER
+Licensor may suspend or revoke any license key upon violation of Section 2.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. IN NO EVENT SHALL THE LICENSOR
+BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF
+THE SOFTWARE.

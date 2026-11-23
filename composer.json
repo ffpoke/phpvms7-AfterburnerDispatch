@@ -1,0 +1,31 @@
+{
+    "name": "ffpoke/phpvms7-routerequest",
+    "type": "phpvms-module",
+    "version": "3.1.0-beta.5",
+    "description": "Pilot Route Request Module v3.1.0-beta.5 \u2014 Afterburner Edition for phpVMS v7 (Requires PHP 8.3+ \u2014 Great-Circle Map, Block-Time Estimator, Range Guardrail + FR24/FA Check, Easy Subfleet Sync + Undo/Presets, Old Route Time Fixer). Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue.",
+    "require": {
+        "php": ">=8.3.36",
+        "ext-sodium": "*"
+    },
+    "authors": [
+        {
+            "name": "Alexander Leard",
+            "role": "Creator \u2014 Fantasy Air VA & Regal Artistic Avenue"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\RouteRequest\\Providers\\AppServiceProvider",
+                "Modules\\RouteRequest\\Providers\\RouteServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\RouteRequest\\": ""
+        }
+    },
+    "license": "proprietary"
+}
