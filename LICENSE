@@ -1,0 +1,58 @@
+PROPRIETARY SOURCE-AVAILABLE END USER LICENSE AGREEMENT (EULA)
+RouteRequest for phpVMS v7
+
+Copyright (c) 2026 Alexander Leard d/b/a Regal Artistic Avenue
+(a California, USA small business). All Rights Reserved.
+
+1. GRANT OF LICENSE
+Subject to your compliance with this EULA, the Cloud DRM SaaS Terms of Service
+(TERMS.md), and the Privacy & Data Protection Policy (PRIVACY.md), Alexander
+Leard d/b/a Regal Artistic Avenue ("Licensor") grants you a
+limited, non-exclusive, non-transferable, revocable license to download,
+inspect, and execute the RouteRequest phpVMS v7 module ("Software") solely on
+your own virtual airline ("VA") phpVMS v7 installation(s) corresponding to your
+active license tier (Tier 1 Basic, Tier 2 Executive, or Tier 3 Flagship).
+
+2. RESTRICTIONS
+This Software is Source-Available and NOT open-source (MIT/GPL). Without prior
+written permission from the Licensor, you may NOT:
+  a) Remove, bypass, disable, alter, or tamper with license verification,
+     Ed25519 cryptographic signature checks, DropSchedule.php feature timetables,
+     rate limits, or Cloud DRM entitlements;
+  b) Redistribute, sublicense, sell, rent, lease, publish, or share the
+     Software, modified forks, or license keys with third parties or across
+     unauthorized/unbound domains;
+  c) Reverse-engineer, spoof, or abuse the RouteRequestServer Cloud DRM API,
+     Discord dispatch proxy, or companion package endpoints.
+
+3. INSTALLATION TELEMETRY, DATA PROTECTION & CALIFORNIA/US PRIVACY
+To enforce domain licensing, deliver compatibility checks, and track active
+installations, the Cloud DRM Client edition transmits minimal, non-personal
+installation telemetry to RouteRequestServer upon module installation,
+activation, version change, and periodic heartbeats (at most once every 24
+hours). Transmitted data is strictly limited to:
+  - Installation web address / domain (app.url) and VA site name;
+  - Installed RouteRequest version, build edition, and PHP version;
+  - License activation state (activated vs. unactivated) and key prefix.
+No pilot personal data (pilot names, emails, IP addresses, or PIREPs) is
+collected by telemetry. Full details on how current and future data are stored,
+encrypted, retained, and protected under California (CalOPPA, CCPA/CPRA) and
+United States laws are set forth in PRIVACY.md. Telemetry operates in fail-open
+mode so brief outages do not disrupt your VA, though an internet connection is
+required for license activation, Cloud DRM features, and updates.
+
+4. TERMINATION, DISCLAIMER & LIMITATION OF LIABILITY
+Licensor may suspend or revoke any license key upon violation of Section 2.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. TO THE MAXIMUM EXTENT PERMITTED
+BY CALIFORNIA AND UNITED STATES LAW, LICENSOR'S TOTAL AGGREGATE LIABILITY UNDER
+THIS EULA SHALL NOT EXCEED THE LICENSE FEES PAID BY YOU IN THE TWELVE (12)
+MONTHS PRECEDING THE CLAIM.
+
+5. GOVERNING LAW & US COMPLIANCE
+This EULA is governed by and construed in accordance with the laws of the State
+of California and applicable federal laws of the United States, without regard
+to conflict-of-law principles. Any dispute shall be brought exclusively in the
+state or federal courts located in California, USA. You agree to comply with
+all applicable U.S. export control and copyright (DMCA) laws.
