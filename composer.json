@@ -1,0 +1,31 @@
+{
+    "name": "ffpoke/phpvms7-afterburner-dispatch",
+    "type": "phpvms-module",
+    "version": "4.1.3",
+    "description": "Afterburner Dispatch Suite v4.1.3 for phpVMS v7 (PHP 8.3.36+ Required) \u2014 Full VA Dispatch, Automatic Subfleet Creator (439 Airlines / 155 Verified Fleet Presets), Bulk Subfleet Sync, Great-Circle Map, Range Guardrail, Analytics & 1-Click Self-Test. Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue.",
+    "require": {
+        "php": ">=8.3.36",
+        "ext-sodium": "*"
+    },
+    "authors": [
+        {
+            "name": "Alexander Leard",
+            "role": "Creator \u2014 Fantasy Air VA & Regal Artistic Avenue"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\AfterburnerDispatch\\Providers\\AppServiceProvider",
+                "Modules\\AfterburnerDispatch\\Providers\\RouteServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\AfterburnerDispatch\\": ""
+        }
+    },
+    "license": "proprietary"
+}
