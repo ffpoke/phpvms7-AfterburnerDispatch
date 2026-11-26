@@ -1,0 +1,15 @@
+name: Validate phpVMS 7 Module (No Auto-Release ZIP)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Validate JSON Manifests
+        run: |
+          python3 -c "import json; json.load(open('module.json')); json.load(open('composer.json')); print('Manifests valid!')"
