@@ -1,0 +1,9 @@
+@echo off
+if not exist .git ( git init -b main )
+git remote remove origin 2>nul
+git remote add origin https://github.com/ffpoke/phpvms7-AfterburnerDispatch.git
+git add .
+git commit -m "Release v4.1.1-beta.3: Verified East & Southeast Asia Flagship Fleets (SIA, TGW, CPA, ANA, JAL — 120 Operators / 84 Verified)"
+git tag -f v4.1.1-beta.3
+git push -f -u origin main --tags
+pause
