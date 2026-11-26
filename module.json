@@ -1,0 +1,37 @@
+{
+    "name": "AfterburnerDispatch",
+    "alias": "afterburner",
+    "version": "4.1.0-beta.4",
+    "php": ">=8.3.36",
+    "description": "Afterburner Dispatch Suite v4.1.0-beta.4 for phpVMS v7 (PHP 8.3.36+ Required / 8.3.37+ Recommended) \u2014 Complete VA Dispatch, Community Route Queue, Interactive Great-Circle Map & Block-Time Estimator, Aircraft Range Guardrail + Live FR24/FA Check, Automatic Subfleet Creator (439 Real-World Operators, 104 Fleet Presets, Custom Syntax, SimBrief Airframe Mapping & Step-by-Step Cabin Fare Wizard), Bulk Subfleet Sync Power Suite, Old Route Time Fixer, Guided Travel Dispatch, 30/90-Day Analytics & 1-Click Self-Test. Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue.",
+    "author": "Made by Alexander Leard of Fantasy Air VA & Regal Artistic Avenue",
+    "keywords": [
+        "phpvms",
+        "php83",
+        "ed25519",
+        "leaflet",
+        "great-circle",
+        "range-guardrail",
+        "subfleet-sync",
+        "route-time-fixer",
+        "disposable",
+        "route-request",
+        "typeratings",
+        "dispatch",
+        "flightaware",
+        "discord",
+        "indexeddb",
+        "afterburner",
+        "paxstudio"
+    ],
+    "active": 1,
+    "order": 0,
+    "providers": [
+        "Modules\\AfterburnerDispatch\\Providers\\AppServiceProvider",
+        "Modules\\AfterburnerDispatch\\Providers\\RouteServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": [],
+    "edition": "drm-client"
+}
